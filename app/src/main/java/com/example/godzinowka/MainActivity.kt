@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -49,13 +50,25 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             sekundy++
         }
     }
+
+    var sformatowanyCzas = timer(sekundy)
     Column(modifier = modifier) {
         Text(text = name)
         Text(text = if(czyPracuje) "Status: Praca w toku" else "Status: Zatrzymano" )
-        Text(text = "Czas pracy: ${sekundy}")
-        Button(onClick = {czyPracuje = !czyPracuje}) {
-            Text(text = if (czyPracuje) "Stop" else "Start")
+        Text(text = "Czas pracy: $sformatowanyCzas")
+        Row {
+            Button(onClick = {czyPracuje = !czyPracuje}) {
+                Text(text = if (czyPracuje) "Stop" else "Start")
+            }
+
+            Button(onClick = {
+                czyPracuje = false
+                sekundy = 0
+            }) {
+                Text(text = "Reset")
+            }
         }
+
    }
 }
 
@@ -65,4 +78,13 @@ fun GreetingPreview() {
     GodzinowkaTheme {
         Greeting("Android")
     }
+}
+
+fun timer(sekundy: Int): String {
+    val h = sekundy / 3600
+    val m = (sekundy % 3600) / 60
+    val s = sekundy % 60
+    val sformatowanyCzas = String.format("%02d:%02d:%02d", h, m, s)
+
+    return sformatowanyCzas;
 }
