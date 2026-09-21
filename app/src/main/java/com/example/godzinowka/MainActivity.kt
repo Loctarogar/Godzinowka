@@ -24,7 +24,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,6 +55,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPracuje by remember { mutableStateOf(false) }
     var sekundy by remember { mutableStateOf(0) }
 
+    var stawkaGodzinowa = 30.0
+    val pelneKwadranse = sekundy / 900
+    val zarobek = pelneKwadranse * (stawkaGodzinowa / 4.0)
+
     LaunchedEffect(czyPracuje) {
         while (czyPracuje) {
             delay(1000L)
@@ -79,6 +85,12 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             text = timer(sekundy),
             fontSize = 48.sp,
             fontWeight =  FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = String.format("Zarobek: %.2f zł", zarobek),
+            fontSize = 22.sp,
+            fontWeight = FontWeight.SemiBold
         )
         Spacer(modifier = Modifier.height(24.dp))
         Row {
