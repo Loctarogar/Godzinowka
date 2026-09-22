@@ -1,5 +1,6 @@
 package com.example.godzinowka
 
+import android.icu.util.Calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -134,9 +135,14 @@ fun przeliczZarobek (sekundy: Int): Double {
 
     val pelneKwadranse = sekundy / 900
 
+    val dzienTygodnia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+    val czyWeekend = (dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY)
+
     var zarobek = 0.0
 
-    if (pelneKwadranse <= 32) {
+    if (czyWeekend) {
+        zarobek = pelneKwadranse * (stawkaNadgodziny / 4.0)
+    } else if (pelneKwadranse <= 32) {
         zarobek = pelneKwadranse * (stawkaStandardowa / 4.0)
     } else {
         val zarobekBaza = 32 * (stawkaStandardowa / 4.0)
