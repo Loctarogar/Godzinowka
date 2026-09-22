@@ -75,6 +75,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
+            text = if (sekundy > 28800) "Stawka: Nadgodziny" else "Stawka: Standardowa",
+            fontSize = 16.sp
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(
             text = if(czyPracuje) "Status: Praca w toku" else "Status: Zatrzymano",
             fontWeight = FontWeight.Bold
             )
