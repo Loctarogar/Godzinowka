@@ -129,9 +129,22 @@ fun timer(sekundy: Int): String {
 }
 
 fun przeliczZarobek (sekundy: Int): Double {
-    var stawkaGodzinowa = 30.0
+    var stawkaStandardowa = 30.0
+    var stawkaNadgodziny = 30.0
+
     val pelneKwadranse = sekundy / 900
-    val zarobek = pelneKwadranse * (stawkaGodzinowa / 4.0)
+
+    var zarobek = 0.0
+
+    if (pelneKwadranse <= 32) {
+        zarobek = pelneKwadranse * (stawkaStandardowa / 4.0)
+    } else {
+        val zarobekBaza = 32 * (stawkaStandardowa / 4.0)
+        val nadgodzinyKwadranse = pelneKwadranse - 32
+        val zarobekNadgodziny = nadgodzinyKwadranse * (stawkaNadgodziny / 4.0)
+
+        zarobek = zarobekBaza + zarobekNadgodziny
+    }
 
     return zarobek;
 }
