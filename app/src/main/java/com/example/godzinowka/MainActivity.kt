@@ -55,9 +55,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPracuje by remember { mutableStateOf(false) }
     var sekundy by remember { mutableStateOf(0) }
 
-    var stawkaGodzinowa = 30.0
-    val pelneKwadranse = sekundy / 900
-    val zarobek = pelneKwadranse * (stawkaGodzinowa / 4.0)
+    var zarobek = przeliczZarobek(sekundy)
 
     LaunchedEffect(czyPracuje) {
         while (czyPracuje) {
@@ -123,4 +121,12 @@ fun timer(sekundy: Int): String {
     val sformatowanyCzas = String.format("%02d:%02d:%02d", h, m, s)
 
     return sformatowanyCzas;
+}
+
+fun przeliczZarobek (sekundy: Int): Double {
+    var stawkaGodzinowa = 30.0
+    val pelneKwadranse = sekundy / 900
+    val zarobek = pelneKwadranse * (stawkaGodzinowa / 4.0)
+
+    return zarobek;
 }
