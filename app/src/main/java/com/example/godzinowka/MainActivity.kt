@@ -1,6 +1,5 @@
 package com.example.godzinowka
 
-import android.icu.util.Calendar
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.godzinowka.ui.theme.GodzinowkaTheme
 import kotlinx.coroutines.delay
+import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,6 +58,12 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     var zarobek = przeliczZarobek(sekundy)
 
+    var tekstStawki = when {
+        czyWeekend() -> "Stawka: Weekendowa"
+        sekundy > 28800 -> "Stawka: Nadgodziny"
+        else -> "Stawka: Standardowa"
+    }
+
     LaunchedEffect(czyPracuje) {
         while (czyPracuje) {
             delay(1000L)
@@ -76,7 +82,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = if (sekundy > 28800) "Stawka: Nadgodziny" else "Stawka: Standardowa",
+            text = tekstStawki,
             fontSize = 16.sp
         )
         Spacer(modifier = Modifier.height(16.dp))
@@ -136,11 +142,11 @@ fun przeliczZarobek (sekundy: Int): Double {
     val pelneKwadranse = sekundy / 900
 
     val dzienTygodnia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-    val czyWeekend = (dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY)
+    //val czyWeekend = (dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY)
 
     var zarobek = 0.0
 
-    if (czyWeekend) {
+    if (czyWeekend()) {
         zarobek = pelneKwadranse * (stawkaNadgodziny / 4.0)
     } else if (pelneKwadranse <= 32) {
         zarobek = pelneKwadranse * (stawkaStandardowa / 4.0)
@@ -153,4 +159,10 @@ fun przeliczZarobek (sekundy: Int): Double {
     }
 
     return zarobek;
+}
+
+fun czyWeekend(): Boolean {
+    val dzienTygodnia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+
+    return dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY
 }
