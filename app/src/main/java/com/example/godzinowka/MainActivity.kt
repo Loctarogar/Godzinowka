@@ -18,21 +18,21 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.font.FontWeight.Companion.SemiBold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.godzinowka.ui.theme.GodzinowkaTheme
 import kotlinx.coroutines.delay
 import java.util.Calendar
+import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,11 +54,11 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPracuje by remember { mutableStateOf(false) }
-    var sekundy by remember { mutableStateOf(0) }
+    var sekundy by remember { mutableIntStateOf(0) }
 
-    var zarobek = przeliczZarobek(sekundy)
+    val zarobek = przeliczZarobek(sekundy)
 
-    var tekstStawki = when {
+    val tekstStawki = when {
         czyWeekend() -> "Stawka: Weekendowa"
         sekundy > 28800 -> "Stawka: Nadgodziny"
         else -> "Stawka: Standardowa"
@@ -66,7 +66,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     LaunchedEffect(czyPracuje) {
         while (czyPracuje) {
-            delay(1000L)
+            delay(1.seconds)
             sekundy++
         }
     }
@@ -98,7 +98,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = String.format("Zarobek: %.2f zł", zarobek),
+            text = String.format(Locale.getDefault(), "Zarobek: %.2f zł", zarobek),
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -130,35 +130,30 @@ fun timer(sekundy: Int): String {
     val h = sekundy / 3600
     val m = (sekundy % 3600) / 60
     val s = sekundy % 60
-    val sformatowanyCzas = String.format("%02d:%02d:%02d", h, m, s)
+    val sformatowanyCzas = String.format(Locale.getDefault(), "%02d:%02d:%02d", h, m, s)
 
-    return sformatowanyCzas;
+    return sformatowanyCzas
 }
 
 fun przeliczZarobek (sekundy: Int): Double {
-    var stawkaStandardowa = 30.0
-    var stawkaNadgodziny = 30.0
+    val stawkaStandardowa = 30.0
+    val stawkaNadgodziny = 30.0
 
     val pelneKwadranse = sekundy / 900
 
-    val dzienTygodnia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-    //val czyWeekend = (dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY)
-
-    var zarobek = 0.0
-
-    if (czyWeekend()) {
-        zarobek = pelneKwadranse * (stawkaNadgodziny / 4.0)
+    val zarobek = if (czyWeekend()) {
+        pelneKwadranse * (stawkaNadgodziny / 4.0)
     } else if (pelneKwadranse <= 32) {
-        zarobek = pelneKwadranse * (stawkaStandardowa / 4.0)
+        pelneKwadranse * (stawkaStandardowa / 4.0)
     } else {
         val zarobekBaza = 32 * (stawkaStandardowa / 4.0)
         val nadgodzinyKwadranse = pelneKwadranse - 32
         val zarobekNadgodziny = nadgodzinyKwadranse * (stawkaNadgodziny / 4.0)
 
-        zarobek = zarobekBaza + zarobekNadgodziny
+        zarobekBaza + zarobekNadgodziny
     }
 
-    return zarobek;
+    return zarobek
 }
 
 fun czyWeekend(): Boolean {
