@@ -64,6 +64,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         else -> "Stawka: Standardowa"
     }
 
+    var czyPokazacOpcje by remember {mutableStateOf(false)}
+
     LaunchedEffect(czyPracuje) {
         while (czyPracuje) {
             delay(1.seconds)
@@ -114,6 +116,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             }) {
                 Text(text = "Reset")
             }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = { czyPokazacOpcje = true}) {
+            Text(text = "Opcje")
         }
    }
 }
