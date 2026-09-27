@@ -73,55 +73,61 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         }
     }
 
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    if (czyPokazacOpcje) {
+        EkranOpcji (onPowrot = { czyPokazacOpcje = false})
+    } else {
+        Column(
+            modifier = modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
 
-    ) {
-        Text(
-            text = name, fontSize = 20.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = tekstStawki,
-            fontSize = 16.sp
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = if(czyPracuje) "Status: Praca w toku" else "Status: Zatrzymano",
-            fontWeight = FontWeight.Bold
+        ) {
+            Text(
+                text = name, fontSize = 20.sp
             )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = timer(sekundy),
-            fontSize = 48.sp,
-            fontWeight =  FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = String.format(Locale.getDefault(), "Zarobek: %.2f zł", zarobek),
-            fontSize = 22.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Row {
-            Button(onClick = {czyPracuje = !czyPracuje}) {
-                Text(text = if (czyPracuje) "Stop" else "Start")
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = tekstStawki,
+                fontSize = 16.sp
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = if(czyPracuje) "Status: Praca w toku" else "Status: Zatrzymano",
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = timer(sekundy),
+                fontSize = 48.sp,
+                fontWeight =  FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = String.format(Locale.getDefault(), "Zarobek: %.2f zł", zarobek),
+                fontSize = 22.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Row {
+                Button(onClick = {czyPracuje = !czyPracuje}) {
+                    Text(text = if (czyPracuje) "Stop" else "Start")
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Button(onClick = {
+                    czyPracuje = false
+                    sekundy = 0
+                }) {
+                    Text(text = "Reset")
+                }
             }
-            Spacer(modifier = Modifier.width(16.dp))
-            Button(onClick = {
-                czyPracuje = false
-                sekundy = 0
-            }) {
-                Text(text = "Reset")
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(onClick = { czyPokazacOpcje = true}) {
+                Text(text = "Opcje")
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { czyPokazacOpcje = true}) {
-            Text(text = "Opcje")
-        }
-   }
+    }
+
+
 }
 
 @Preview(showBackground = true)
@@ -129,6 +135,21 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 fun GreetingPreview() {
     GodzinowkaTheme {
         Greeting("Android")
+    }
+}
+
+@Composable
+fun EkranOpcji(onPowrot: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Ustawienia stawek", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onPowrot) {
+            Text(text = "Wróć")
+        }
     }
 }
 
