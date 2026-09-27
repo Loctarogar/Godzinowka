@@ -55,10 +55,24 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPracuje by remember { mutableStateOf(false) }
+
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sharedPreferences = remember {
+        context.getSharedPreferences(
+            "UstawieniaGodzinówka",
+            android.content.Context.MODE_PRIVATE
+            )
+    }
+
+
     var sekundy by remember { mutableIntStateOf(0) }
 
-    var stawkaStandardowaText by remember { mutableStateOf("34.0") }
-    var stawkaNadgodzinyText by remember { mutableStateOf("35.0") }
+    var stawkaStandardowaText by remember {
+        mutableStateOf( sharedPreferences.getString("stawka_standardowa", "30.0") ?:"34.0")
+    }
+    var stawkaNadgodzinyText by remember {
+        mutableStateOf( sharedPreferences.getString("stawka_nadgodziny", "45.0.0") ?:"45.0")
+    }
 
     val stawkaStandardowa = stawkaStandardowaText.toDoubleOrNull() ?: 0.0
     val stawkaNadgodziny = stawkaNadgodzinyText.toDoubleOrNull() ?: 0.0
@@ -83,9 +97,15 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     if (czyPokazacOpcje) {
         EkranOpcji (
             stawkaStandardowa = stawkaStandardowaText,
-            onStawkaStandardowaChange = { stawkaStandardowaText = it },
+            onStawkaStandardowaChange = { nowaStawka ->
+                stawkaStandardowaText = nowaStawka
+                sharedPreferences.edit().putString("stawka_standardowa", nowaStawka).apply()
+                                        },
             stawkaNadgodziny = stawkaNadgodzinyText,
-            onStawkaNadgodzinyChange = { stawkaNadgodzinyText = it },
+            onStawkaNadgodzinyChange = { nowaStawka ->
+                stawkaNadgodzinyText = nowaStawka
+                sharedPreferences.edit().putString("stawka_nadgodziny", nowaStawka).apply()
+                                       },
             onPowrot = { czyPokazacOpcje = false}
         )
     } else {
