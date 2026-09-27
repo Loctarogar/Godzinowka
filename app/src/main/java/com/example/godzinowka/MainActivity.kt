@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,7 +57,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPracuje by remember { mutableStateOf(false) }
     var sekundy by remember { mutableIntStateOf(0) }
 
-    val zarobek = przeliczZarobek(sekundy)
+    var stawkaStandardowaText by remember { mutableStateOf("34.0") }
+    var stawkaNadgodzinyText by remember { mutableStateOf("35.0") }
+
+    val stawkaStandardowa = stawkaStandardowaText.toDoubleOrNull() ?: 0.0
+    val stawkaNadgodziny = stawkaNadgodzinyText.toDoubleOrNull() ?: 0.0
+
+    val zarobek = przeliczZarobek(sekundy, stawkaStandardowa, stawkaNadgodziny)
 
     val tekstStawki = when {
         czyWeekend() -> "Stawka: Weekendowa"
@@ -74,7 +81,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     }
 
     if (czyPokazacOpcje) {
-        EkranOpcji (onPowrot = { czyPokazacOpcje = false})
+        EkranOpcji (
+            stawkaStandardowa = stawkaStandardowaText,
+            onStawkaStandardowaChange = { stawkaStandardowaText = it },
+            stawkaNadgodziny = stawkaNadgodzinyText,
+            onStawkaNadgodzinyChange = { stawkaNadgodzinyText = it },
+            onPowrot = { czyPokazacOpcje = false}
+        )
     } else {
         Column(
             modifier = modifier.fillMaxSize(),
@@ -139,7 +152,13 @@ fun GreetingPreview() {
 }
 
 @Composable
-fun EkranOpcji(onPowrot: () -> Unit) {
+fun EkranOpcji(
+    stawkaStandardowa: String,
+    onStawkaStandardowaChange: (String) -> Unit,
+    stawkaNadgodziny: String,
+    onStawkaNadgodzinyChange: (String) -> Unit,
+    onPowrot: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -147,6 +166,23 @@ fun EkranOpcji(onPowrot: () -> Unit) {
     ) {
         Text(text = "Ustawienia stawek", fontSize = 24.sp, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = stawkaStandardowa,
+            onValueChange = onStawkaStandardowaChange,
+            label = { Text("Stawka bazowa (zł/h)") }
+        )
+
+        Spacer(modifier = Modifier.height( 8.dp ))
+
+        OutlinedTextField(
+            value = stawkaNadgodziny,
+            onValueChange = onStawkaNadgodzinyChange,
+            label = { Text("Stawka nadgodziny/weekend (zł/h)")}
+        )
+
+        Spacer(modifier =  Modifier.height(24.dp))
+
         Button(onClick = onPowrot) {
             Text(text = "Wróć")
         }
@@ -162,9 +198,11 @@ fun timer(sekundy: Int): String {
     return sformatowanyCzas
 }
 
-fun przeliczZarobek (sekundy: Int): Double {
-    val stawkaStandardowa = 30.0
-    val stawkaNadgodziny = 30.0
+fun przeliczZarobek (
+    sekundy: Int,
+    stawkaStandardowa: Double,
+    stawkaNadgodziny:  Double
+): Double {
 
     val pelneKwadranse = sekundy / 900
 
