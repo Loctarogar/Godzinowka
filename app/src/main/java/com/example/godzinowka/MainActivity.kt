@@ -55,7 +55,6 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
     val context = androidx.compose.ui.platform.LocalContext.current
-
     val sharedPreferences = remember {
         context.getSharedPreferences(
             "UstawieniaGodzinówka",
@@ -68,7 +67,17 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     }
 
     var sekundy by remember {
-        mutableIntStateOf( sharedPreferences.getInt("zapisane_sekundy", 0))
+        val zapisaneSekundy = sharedPreferences.getInt("zapisane_sekundy", 0)
+        val czasRozpoczęcia = sharedPreferences.getLong("czas_startu_ms", 0L)
+
+        val sekundyPoczatkowe = if (czyPracuje && czasRozpoczęcia > 0L) {
+            val minelosMs = System.currentTimeMillis() - czasRozpoczęcia
+            zapisaneSekundy + (minelosMs / 1000).toInt()
+        } else {
+            zapisaneSekundy
+        }
+
+        mutableIntStateOf(sekundyPoczatkowe)
     }
 
     var stawkaStandardowaText by remember {
@@ -149,7 +158,18 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             Row {
                 Button(onClick = {
                     czyPracuje = !czyPracuje
-                    sharedPreferences.edit().putBoolean("stan_czy_pracuje", czyPracuje).apply()
+                    if(czyPracuje) {
+                        sharedPreferences.edit()
+                            .putBoolean("stan_czy_pracuje", true)
+                            .putLong("czas_startu_ms", System.currentTimeMillis())
+                            .apply()
+                    } else {
+                        sharedPreferences.edit()
+                            .putBoolean("stan_czy_pracuje", false)
+                            .putInt("zapisane_sekundy", sekundy)
+                            .putLong("czas_startu_ms", 0L)
+                            .apply()
+                    }
                 }) {
                     Text(text = if (czyPracuje) "Stop" else "Start")
                 }
@@ -160,6 +180,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                     sharedPreferences.edit()
                         .putBoolean("stan_czy_pracuje", false)
                         .putInt("zapisane_sekundy", 0)
+                        .putLong("czas_startu_ms", 0L)
                         .apply()
                 }) {
                     Text(text = "Reset")
