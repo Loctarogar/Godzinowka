@@ -54,18 +54,22 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
-    var czyPracuje by remember { mutableStateOf(false) }
-
     val context = androidx.compose.ui.platform.LocalContext.current
+
     val sharedPreferences = remember {
         context.getSharedPreferences(
             "UstawieniaGodzinówka",
             android.content.Context.MODE_PRIVATE
-            )
+        )
     }
 
+    var czyPracuje by remember {
+        mutableStateOf( sharedPreferences.getBoolean("stan_czy_pracuje",  false))
+    }
 
-    var sekundy by remember { mutableIntStateOf(0) }
+    var sekundy by remember {
+        mutableIntStateOf( sharedPreferences.getInt("zapisane_sekundy", 0))
+    }
 
     var stawkaStandardowaText by remember {
         mutableStateOf( sharedPreferences.getString("stawka_standardowa", "30.0") ?:"34.0")
@@ -91,6 +95,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         while (czyPracuje) {
             delay(1.seconds)
             sekundy++
+            sharedPreferences.edit().putInt("zapisane_sekundy", sekundy).apply()
         }
     }
 
@@ -142,13 +147,20 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             )
             Spacer(modifier = Modifier.height(24.dp))
             Row {
-                Button(onClick = {czyPracuje = !czyPracuje}) {
+                Button(onClick = {
+                    czyPracuje = !czyPracuje
+                    sharedPreferences.edit().putBoolean("stan_czy_pracuje", czyPracuje).apply()
+                }) {
                     Text(text = if (czyPracuje) "Stop" else "Start")
                 }
                 Spacer(modifier = Modifier.width(16.dp))
                 Button(onClick = {
                     czyPracuje = false
                     sekundy = 0
+                    sharedPreferences.edit()
+                        .putBoolean("stan_czy_pracuje", false)
+                        .putInt("zapisane_sekundy", 0)
+                        .apply()
                 }) {
                     Text(text = "Reset")
                 }
