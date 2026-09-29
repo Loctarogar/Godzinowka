@@ -31,9 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.godzinowka.ui.theme.GodzinowkaTheme
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,10 +70,10 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     var sekundy by remember {
         val zapisaneSekundy = sharedPreferences.getInt("zapisane_sekundy", 0)
-        val czasRozpoczęcia = sharedPreferences.getLong("czas_startu_ms", 0L)
+        val czasRozpoczecia = sharedPreferences.getLong("czas_startu_ms", 0L)
 
-        val sekundyPoczatkowe = if (czyPracuje && czasRozpoczęcia > 0L) {
-            val minelosMs = System.currentTimeMillis() - czasRozpoczęcia
+        val sekundyPoczatkowe = if (czyPracuje && czasRozpoczecia > 0L) {
+            val minelosMs = System.currentTimeMillis() - czasRozpoczecia
             zapisaneSekundy + (minelosMs / 1000).toInt()
         } else {
             zapisaneSekundy
@@ -192,8 +194,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             }
         }
     }
-
-
 }
 
 @Preview(showBackground = true)
@@ -278,4 +278,10 @@ fun czyWeekend(): Boolean {
     val dzienTygodnia = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
 
     return dzienTygodnia == Calendar.SATURDAY || dzienTygodnia == Calendar.SUNDAY
+}
+
+fun pobierzAktualnaDateICzas(): String {
+    val format = SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
+
+    return format.format(java.util.Date())
 }
