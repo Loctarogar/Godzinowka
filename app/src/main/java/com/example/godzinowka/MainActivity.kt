@@ -59,13 +59,17 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sharedPreferences = remember {
         context.getSharedPreferences(
-            "UstawieniaGodzinówka",
+            "UstawieniaGodzinowka",
             android.content.Context.MODE_PRIVATE
         )
     }
 
     var czyPracuje by remember {
         mutableStateOf( sharedPreferences.getBoolean("stan_czy_pracuje",  false))
+    }
+
+    var czasStartuTekst by remember {
+        mutableStateOf(sharedPreferences.getString("czas_startu_tekst", "") ?: "")
     }
 
     var sekundy by remember {
@@ -86,7 +90,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         mutableStateOf( sharedPreferences.getString("stawka_standardowa", "30.0") ?:"34.0")
     }
     var stawkaNadgodzinyText by remember {
-        mutableStateOf( sharedPreferences.getString("stawka_nadgodziny", "45.0.0") ?:"45.0")
+        mutableStateOf( sharedPreferences.getString("stawka_nadgodziny", "45.0") ?:"45.0")
     }
 
     val stawkaStandardowa = stawkaStandardowaText.toDoubleOrNull() ?: 0.0
@@ -159,17 +163,33 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(24.dp))
             Row {
                 Button(onClick = {
-                    czyPracuje = !czyPracuje
-                    if(czyPracuje) {
+                    if(!czyPracuje) {
+                        val terazTekst = pobierzAktualnaDateICzas()
+                        czasStartuTekst = terazTekst
+                        czyPracuje = true
+
                         sharedPreferences.edit()
                             .putBoolean("stan_czy_pracuje", true)
                             .putLong("czas_startu_ms", System.currentTimeMillis())
+                            .putString("czas_startu_tekst", terazTekst)
                             .apply()
                     } else {
+                        val czasStopuTekst = pobierzAktualnaDateICzas()
+                        val nowaSesja = SesjaPracy(
+                            dataCzasStartu = if(czasStartuTekst.isNotEmpty()) czasStartuTekst else czasStopuTekst,
+                            dataCzasStopu = czasStopuTekst,
+                            przepracowaneSekundy = sekundy,
+                            zarobekKwota = zarobek
+                        )
+                        czyPracuje = false
+                        sekundy = 0
+                        czasStartuTekst = ""
+
                         sharedPreferences.edit()
                             .putBoolean("stan_czy_pracuje", false)
-                            .putInt("zapisane_sekundy", sekundy)
+                            .putInt("zapisane_sekundy", 0)
                             .putLong("czas_startu_ms", 0L)
+                            .putString("czas_startu_tekst", "")
                             .apply()
                     }
                 }) {
