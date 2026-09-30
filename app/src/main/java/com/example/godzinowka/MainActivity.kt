@@ -75,14 +75,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     }
 
     var sekundy by remember {
-        val zapisaneSekundy = sharedPreferences.getInt("zapisane_sekundy", 0)
         val czasRozpoczecia = sharedPreferences.getLong("czas_startu_ms", 0L)
 
         val sekundyPoczatkowe = if (czyPracuje && czasRozpoczecia > 0L) {
             val minelosMs = System.currentTimeMillis() - czasRozpoczecia
-            zapisaneSekundy + (minelosMs / 1000).toInt()
+            (minelosMs / 1000).toInt()
         } else {
-            zapisaneSekundy
+            sharedPreferences.getInt("zapisane_sekundy", 0)
         }
 
         mutableIntStateOf(sekundyPoczatkowe)
