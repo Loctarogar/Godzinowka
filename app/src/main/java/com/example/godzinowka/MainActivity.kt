@@ -195,18 +195,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 }) {
                     Text(text = if (czyPracuje) "Stop" else "Start")
                 }
-                Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = {
-                    czyPracuje = false
-                    sekundy = 0
-                    sharedPreferences.edit()
-                        .putBoolean("stan_czy_pracuje", false)
-                        .putInt("zapisane_sekundy", 0)
-                        .putLong("czas_startu_ms", 0L)
-                        .apply()
-                }) {
-                    Text(text = "Reset")
-                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Button(onClick = { czyPokazacOpcje = true}) {
