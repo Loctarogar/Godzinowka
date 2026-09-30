@@ -1,6 +1,7 @@
 package com.example.godzinowka
 
 import android.os.Bundle
+import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -96,7 +98,29 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     val stawkaStandardowa = stawkaStandardowaText.toDoubleOrNull() ?: 0.0
     val stawkaNadgodziny = stawkaNadgodzinyText.toDoubleOrNull() ?: 0.0
 
-    val zarobek = przeliczZarobek(sekundy, stawkaStandardowa, stawkaNadgodziny)
+    val sdfDnia = SimpleDateFormat("dd.MM", Locale.getDefault())
+    val kalendarz = Calendar.getInstance()
+
+    val dataDzis = sdfDnia.format(kalendarz.time)
+    kalendarz.add(Calendar.DAY_OF_YEAR, -1)
+    val dataWczoraj = sdfDnia.format(kalendarz.time)
+    kalendarz.add(Calendar.DAY_OF_YEAR, -1)
+    val dataPrzedwczoraj = sdfDnia.format(kalendarz.time)
+
+    val sekundyPredwczoraj by remember {
+        mutableStateOf(sharedPreferences.getInt("suma_sekund_$dataPrzedwczoraj", 0))
+    }
+
+    val sekundyWczoraj by remember {
+        mutableStateOf(sharedPreferences.getInt("suma_sekund_$dataWczoraj", 0 ))
+    }
+
+    var sekundyDzisZapisane by remember {
+        mutableIntStateOf(sharedPreferences.getInt("suma_sekund_$dataDzis", 0))
+    }
+    val sumaDzisZapisane = sekundyDzisZapisane + sekundy
+
+    val zarobek = przeliczZarobek(sumaDzisZapisane, stawkaStandardowa, stawkaNadgodziny)
 
     val tekstStawki = when {
         czyWeekend() -> "Stawka: Weekendowa"
@@ -144,6 +168,29 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 fontSize = 16.sp
             )
             Spacer(modifier = Modifier.height(16.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = dataPrzedwczoraj, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = formatujGodzinyKrotko(sekundyPredwczoraj), fontSize = 15.sp)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = dataWczoraj, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = formatujGodzinyKrotko(sekundyWczoraj), fontSize = 15.sp)
+                }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = dataDzis, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(text = formatujGodzinyKrotko(sumaDzisZapisane), fontSize = 15.sp)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = if(czyPracuje) "Status: Praca w toku" else "Status: Zatrzymano",
                 fontWeight = FontWeight.Bold
@@ -181,11 +228,13 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                             przepracowaneSekundy = sekundy,
                             zarobekKwota = zarobek
                         )
+                        sekundyDzisZapisane += sekundy
                         czyPracuje = false
                         sekundy = 0
                         czasStartuTekst = ""
 
                         sharedPreferences.edit()
+                            .putInt("suma_sekund_$dataDzis", sekundyDzisZapisane)
                             .putBoolean("stan_czy_pracuje", false)
                             .putInt("zapisane_sekundy", 0)
                             .putLong("czas_startu_ms", 0L)
@@ -292,4 +341,11 @@ fun pobierzAktualnaDateICzas(): String {
     val format = SimpleDateFormat("dd.MM.yyyy HH:mm", java.util.Locale.getDefault())
 
     return format.format(java.util.Date())
+}
+
+fun formatujGodzinyKrotko(sekundy: Int): String {
+    val h = sekundy / 3600
+    val m = (sekundy % 3600) / 60
+
+    return "${h}g ${m}m"
 }
