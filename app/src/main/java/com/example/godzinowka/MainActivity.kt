@@ -1,7 +1,6 @@
 package com.example.godzinowka
 
 import android.os.Bundle
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -165,7 +164,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 sharedPreferences.edit()
                     .putLong("czas_startu_ms", poczatekDzisiajMs)
                     .putInt("zapisane_sekundy", sekundy)
-                    .putString("czas_startu_tekstu", pobierzAktualnaDateICzas())
+                    .putString("czas_startu_tekst", pobierzAktualnaDateICzas())
                     .apply()
             } else {
                 sekundy++
