@@ -130,10 +130,47 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     var czyPokazacOpcje by remember {mutableStateOf(false)}
 
     LaunchedEffect(czyPracuje) {
-        while (czyPracuje) {
+        val formatDnia = SimpleDateFormat("dd.MM", Locale.getDefault())
+        while(czyPracuje) {
             delay(1.seconds)
-            sekundy++
-            sharedPreferences.edit().putInt("zapisane_sekundy", sekundy).apply()
+
+            val terazMs = System.currentTimeMillis()
+            val calTeraz = Calendar.getInstance().apply { timeInMillis = terazMs }
+            val dataTeraz = formatDnia.format(calTeraz.time)
+
+            val startMs = sharedPreferences.getLong("czas_startu_ms", terazMs)
+            val calStart = Calendar.getInstance().apply { timeInMillis = startMs }
+            val dataStartu = formatDnia.format(calStart.time)
+
+            if(dataTeraz != dataStartu) {
+                val calPolnoc = Calendar.getInstance().apply {
+                    timeInMillis = startMs
+                    set(Calendar.HOUR_OF_DAY, 23)
+                    set(Calendar.MINUTE, 59)
+                    set(Calendar.SECOND, 59)
+                    set(Calendar.MILLISECOND, 999)
+                }
+
+                val sekundyDoPolnocy = ((calPolnoc.timeInMillis - startMs) / 1000).toInt()
+                val dotychczasWczoraj = sharedPreferences.getInt("suma_sekund_$dataStartu", 0)
+                sharedPreferences.edit()
+                    .putInt("suma_sekund_$dataStartu", dotychczasWczoraj + sekundyDoPolnocy)
+                    .apply()
+
+                val poczatekDzisiajMs = calPolnoc.timeInMillis + 1L
+                val noweSekundyDzis = ((terazMs - poczatekDzisiajMs) / 1000).toInt()
+
+                sekundy = noweSekundyDzis
+
+                sharedPreferences.edit()
+                    .putLong("czas_startu_ms", poczatekDzisiajMs)
+                    .putInt("zapisane_sekundy", sekundy)
+                    .putString("czas_startu_tekstu", pobierzAktualnaDateICzas())
+                    .apply()
+            } else {
+                sekundy++
+                sharedPreferences.edit().putInt("zapisane_sekundy", sekundy).apply()
+            }
         }
     }
 
