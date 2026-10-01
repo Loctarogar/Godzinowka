@@ -1,5 +1,6 @@
 package com.example.godzinowka
 
+import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,7 +37,8 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
-
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -263,6 +265,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                             przepracowaneSekundy = sekundy,
                             zarobekKwota = zarobek
                         )
+                        zapiszSesjeWHistorii(sharedPreferences, nowaSesja)
+
                         sekundyDzisZapisane += sekundy
                         czyPracuje = false
                         sekundy = 0
@@ -383,4 +387,33 @@ fun formatujGodzinyKrotko(sekundy: Int): String {
     val m = (sekundy % 3600) / 60
 
     return "${h}g ${m}m"
+}
+
+fun zapiszSesjeWHistorii(
+    sharedPreferences: android.content.SharedPreferences,
+    nowaSesja: SesjaPracy
+) {
+    val gson = Gson()
+    val dotychczasoweSesje = wczytajHistorieSesji(sharedPreferences).toMutableList()
+
+    dotychczasoweSesje.add(0, nowaSesja)
+
+    val jsonTekst = gson.toJson(dotychczasoweSesje)
+    sharedPreferences.edit()
+        .putString("historia_sesji_json", jsonTekst)
+        .apply()
+}
+
+fun wczytajHistorieSesji(
+    sharedPreferences: android.content.SharedPreferences
+): List<SesjaPracy> {
+    val gson = Gson()
+    val jsonTekst = sharedPreferences.getString("historia_sesji_json", null) ?: return emptyList()
+
+    val typListy = object : TypeToken<List<SesjaPracy>>() {}.type
+    return  try {
+        gson.fromJson(jsonTekst, typListy)
+    } catch (e: Exception) {
+        emptyList()
+    }
 }
