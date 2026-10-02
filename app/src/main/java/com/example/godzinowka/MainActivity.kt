@@ -2,6 +2,7 @@ package com.example.godzinowka
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -129,6 +130,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     }
 
     var czyPokazacOpcje by remember {mutableStateOf(false)}
+    var czyPokazacHistorie by remember { mutableStateOf(false) }
 
     LaunchedEffect(czyPracuje) {
         val formatDnia = SimpleDateFormat("dd.MM", Locale.getDefault())
@@ -188,6 +190,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 sharedPreferences.edit().putString("stawka_nadgodziny", nowaStawka).apply()
                                        },
             onPowrot = { czyPokazacOpcje = false}
+        )
+    } else if(czyPokazacHistorie) {
+        EkranHistorii(
+            sharedPreferences = sharedPreferences,
+            onPowrot = {czyPokazacHistorie = false}
         )
     } else {
         Column(
@@ -284,9 +291,18 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                     Text(text = if (czyPracuje) "Stop" else "Start")
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { czyPokazacOpcje = true}) {
-                Text(text = "Opcje")
+
+
+            Row {
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { czyPokazacHistorie = true}) {
+                    Text(text = "Historia")
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = { czyPokazacOpcje = true}) {
+                    Text(text = "Opcje")
+                }
             }
         }
     }
@@ -415,5 +431,23 @@ fun wczytajHistorieSesji(
         gson.fromJson(jsonTekst, typListy)
     } catch (e: Exception) {
         emptyList()
+    }
+}
+
+@Composable
+fun EkranHistorii(
+    sharedPreferences: SharedPreferences,
+    onPowrot: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Historia sesji", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onPowrot) {
+            Text(text = "Wróć")
+        }
     }
 }
