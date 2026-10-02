@@ -124,7 +124,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     val tekstStawki = when {
         czyWeekend() -> "Stawka: Weekendowa"
-        sekundy > 28800 -> "Stawka: Nadgodziny"
+        sumaDzisZapisane > 28800 -> "Stawka: Nadgodziny"
         else -> "Stawka: Standardowa"
     }
 
