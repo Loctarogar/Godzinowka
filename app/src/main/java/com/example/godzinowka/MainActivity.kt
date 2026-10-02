@@ -29,7 +29,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +46,7 @@ import com.google.gson.reflect.TypeToken
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.ui.Alignment
 
 
 class MainActivity : ComponentActivity() {
@@ -447,7 +447,11 @@ fun EkranHistorii(
     sharedPreferences: SharedPreferences,
     onPowrot: () -> Unit
 ) {
-    val listaSesji = remember { wczytajHistorieSesji(sharedPreferences) }
+    val listaSesji = remember {
+        androidx.compose.runtime.mutableStateListOf<SesjaPracy>().apply {
+        addAll(wczytajHistorieSesji(sharedPreferences))
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -472,7 +476,8 @@ fun EkranHistorii(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(listaSesji) {sesja ->
+                items(listaSesji.size) {indeks ->
+                    val sesja = listaSesji[indeks]
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -489,16 +494,27 @@ fun EkranHistorii(
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = "Czas: ${formatujGodzinyKrotko(sesja.przepracowaneSekundy)}",
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                                Text(
-                                    text = String.format(Locale.getDefault(), "%.2f zł", sesja.zarobekKwota),
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Column {
+                                    Text(
+                                        text = "Czas: ${formatujGodzinyKrotko(sesja.przepracowaneSekundy)}",
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Text(
+                                        text = String.format(Locale.getDefault(), "%.2f zł", sesja.zarobekKwota),
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        usunSesjeZHistorii(sharedPreferences, indeks)
+                                        listaSesji.removeAt(indeks)
+                                    }
+                                ) {
+                                    Text(text = "Usuń")
+                                }
                             }
                         }
                     }
@@ -511,5 +527,19 @@ fun EkranHistorii(
         Button(onClick = onPowrot) {
             Text(text = "Wróć")
         }
+    }
+}
+
+fun usunSesjeZHistorii (
+    sharedPreferences: SharedPreferences,
+    indeksDoUsuniecia: Int
+) {
+    val dotychczasoweSesje = wczytajHistorieSesji(sharedPreferences).toMutableList()
+    if (indeksDoUsuniecia in dotychczasoweSesje.indices) {
+        dotychczasoweSesje.removeAt(indeksDoUsuniecia)
+            val jsonTekst = Gson().toJson(dotychczasoweSesje)
+            sharedPreferences.edit()
+                .putString("historia_sesji_json", jsonTekst)
+                .apply()
     }
 }
