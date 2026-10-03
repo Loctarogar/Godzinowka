@@ -43,7 +43,6 @@ import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
@@ -210,6 +209,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     } else if (czyPokazacRaporty) {
         EkranRaportow(
             sharedPreferences = sharedPreferences,
+            biezaceSekundy = sekundy,
+            czyPracuje = czyPracuje,
             onPowrot = {czyPokazacRaporty = false}
         )
     } else {
@@ -560,13 +561,21 @@ fun usunSesjeZHistorii (
 @Composable
 fun EkranRaportow (
     sharedPreferences: SharedPreferences,
+    biezaceSekundy: Int,
+    czyPracuje: Boolean,
     onPowrot: () -> Unit
 ) {
     val sesje = remember { wczytajHistorieSesji(sharedPreferences) }
 
-    val raportDzisiaj = remember { filtrujSesjeZaOkres(sesje, 1, sharedPreferences) }
-    val raportTydzien = remember { filtrujSesjeZaOkres(sesje, 7, sharedPreferences) }
-    val raportMiesiac = remember { filtrujSesjeZaOkres(sesje, 30, sharedPreferences) }
+    val raportDzisiaj = remember(sesje, biezaceSekundy, czyPracuje) {
+        filtrujSesjeZaOkres(sesje, 1, sharedPreferences, biezaceSekundy, czyPracuje)
+    }
+    val raportTydzien = remember(sesje, biezaceSekundy, czyPracuje) {
+        filtrujSesjeZaOkres(sesje, 7, sharedPreferences, biezaceSekundy, czyPracuje)
+    }
+    val raportMiesiac = remember(sesje, biezaceSekundy, czyPracuje) {
+        filtrujSesjeZaOkres(sesje, 30, sharedPreferences, biezaceSekundy, czyPracuje)
+    }
 
     val listaRaportow = listOf(raportDzisiaj, raportTydzien, raportMiesiac)
     Column(
@@ -602,6 +611,10 @@ fun EkranRaportow (
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
+                            Text(
+                                text = "Łącznie: ${formatujGodzinyKrotko(raport.laczneSekundy)}",
+                                fontWeight = FontWeight.SemiBold
+                            )
                             Text(
                                 text = String.format(Locale.getDefault(), "%.2f zł", raport.laczyZarobek),
                                 fontWeight = FontWeight.Bold
@@ -665,11 +678,23 @@ data class PodsumowanieOkresu (
 fun filtrujSesjeZaOkres(
     sesje: List<SesjaPracy>,
     dniWstecz: Int,
-    sharedPreferences: SharedPreferences
+    sharedPreferences: SharedPreferences,
+    biezaceSekundy: Int = 0,
+    czyTerazPracuje: Boolean = false
 ): PodsumowanieOkresu {
     val teraz = Calendar.getInstance()
-    teraz.add(Calendar.DAY_OF_YEAR, - dniWstecz)
-    val granicznaData = teraz.time
+    val calGranica = Calendar.getInstance().apply {
+        if (dniWstecz ==1 ) {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        } else {
+            add(Calendar.DAY_OF_YEAR, -dniWstecz)
+        }
+    }
+//    teraz.add(Calendar.DAY_OF_YEAR, - dniWstecz)
+    val granicznaData = calGranica.time
 
     val formatDaty = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
 
@@ -683,6 +708,18 @@ fun filtrujSesjeZaOkres(
         } catch (e: Exception) {
             false
         }
+    }.toMutableList()
+
+    if (czyTerazPracuje && biezaceSekundy > 0) {
+        val terazTekst = formatDaty.format(teraz.time)
+        przefiltrowane.add(
+            SesjaPracy(
+                dataCzasStartu = terazTekst,
+                dataCzasStopu = terazTekst,
+                przepracowaneSekundy = biezaceSekundy,
+                zarobekKwota = 0.0
+            )
+        )
     }
 
     var sumaSekundStd = 0
