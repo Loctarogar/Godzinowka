@@ -139,6 +139,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     var czyPokazacOpcje by remember {mutableStateOf(false)}
     var czyPokazacHistorie by remember { mutableStateOf(false) }
+    var czyPokazacRaporty by remember { mutableStateOf(false) }
 
     LaunchedEffect(czyPracuje) {
         val formatDnia = SimpleDateFormat("dd.MM", Locale.getDefault())
@@ -203,6 +204,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         EkranHistorii(
             sharedPreferences = sharedPreferences,
             onPowrot = {czyPokazacHistorie = false}
+        )
+    } else if (czyPokazacRaporty) {
+        EkranRaportow(
+            sharedPreferences = sharedPreferences,
+            onPowrot = {czyPokazacRaporty = false}
         )
     } else {
         Column(
@@ -305,6 +311,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { czyPokazacHistorie = true}) {
                     Text(text = "Historia")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(onClick = {czyPokazacRaporty = true}){
+                    Text(text = "Raporty")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -541,5 +552,25 @@ fun usunSesjeZHistorii (
             sharedPreferences.edit()
                 .putString("historia_sesji_json", jsonTekst)
                 .apply()
+    }
+}
+
+@Composable
+fun EkranRaportow (
+    sharedPreferences: SharedPreferences,
+    onPowrot: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(text = "Raporty okresowe", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onPowrot) {
+            Text(text = "Wróć")
+        }
     }
 }
