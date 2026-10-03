@@ -117,17 +117,20 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     kalendarz.add(Calendar.DAY_OF_YEAR, -1)
     val dataPrzedwczoraj = sdfDnia.format(kalendarz.time)
 
-    val sekundyPredwczoraj by remember {
-        mutableStateOf(sharedPreferences.getInt("suma_sekund_$dataPrzedwczoraj", 0))
+    val sesjeHistorii = remember(czyPracuje) { wczytajHistorieSesji(sharedPreferences) }
+
+    val sekundyPredwczoraj = remember(sesjeHistorii) {
+        obliczSekundyDlaDnia(sesjeHistorii, dataPrzedwczoraj)
     }
 
-    val sekundyWczoraj by remember {
-        mutableStateOf(sharedPreferences.getInt("suma_sekund_$dataWczoraj", 0 ))
+    val sekundyWczoraj = remember(sesjeHistorii) {
+        obliczSekundyDlaDnia(sesjeHistorii, dataWczoraj)
     }
 
-    var sekundyDzisZapisane by remember {
-        mutableIntStateOf(sharedPreferences.getInt("suma_sekund_$dataDzis", 0))
+    val sekundyDzisZapisane = remember(sesjeHistorii) {
+        obliczSekundyDlaDnia(sesjeHistorii, dataDzis)
     }
+
     val sumaDzisZapisane = sekundyDzisZapisane + sekundy
 
     val zarobek = przeliczZarobek(sumaDzisZapisane, stawkaStandardowa, stawkaNadgodziny)
@@ -144,6 +147,8 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 
     LaunchedEffect(czyPracuje) {
         val formatDnia = SimpleDateFormat("dd.MM", Locale.getDefault())
+        val formatPelny = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+
         while(czyPracuje) {
             delay(1.seconds)
 
@@ -156,6 +161,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             val dataStartu = formatDnia.format(calStart.time)
 
             if(dataTeraz != dataStartu) {
+                // 1. Wyznaczamy moment północy dla starego dnia (23:59:59)
                 val calPolnoc = Calendar.getInstance().apply {
                     timeInMillis = startMs
                     set(Calendar.HOUR_OF_DAY, 23)
@@ -165,20 +171,29 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 }
 
                 val sekundyDoPolnocy = ((calPolnoc.timeInMillis - startMs) / 1000).toInt()
-                val dotychczasWczoraj = sharedPreferences.getInt("suma_sekund_$dataStartu", 0)
-                sharedPreferences.edit()
-                    .putInt("suma_sekund_$dataStartu", dotychczasWczoraj + sekundyDoPolnocy)
-                    .apply()
+                val czasStopuWczoraj = formatPelny.format(calPolnoc.time)
+                val zarobekWczoraj = przeliczZarobek(sekundyDoPolnocy, stawkaStandardowa, stawkaNadgodziny)
 
+                // 2. Tworzymy i zapisujemy zamkniętą sesję starego dnia w historii
+                val sesjaWczoraj = SesjaPracy(
+                    dataCzasStartu = if(czasStartuTekst.isNotEmpty()) czasStartuTekst else formatPelny.format(calStart.time),
+                    dataCzasStopu = czasStopuWczoraj,
+                    przepracowaneSekundy = sekundyDoPolnocy,
+                    zarobekKwota = zarobekWczoraj
+                )
+                zapiszSesjeWHistorii(sharedPreferences, sesjaWczoraj)
+
+                // 3. Rozpoczynamy nowy dzień od północy (00:00:00)
                 val poczatekDzisiajMs = calPolnoc.timeInMillis + 1L
                 val noweSekundyDzis = ((terazMs - poczatekDzisiajMs) / 1000).toInt()
 
                 sekundy = noweSekundyDzis
+                czasStartuTekst = formatPelny.format(Calendar.getInstance().apply { timeInMillis = poczatekDzisiajMs }.time)
 
                 sharedPreferences.edit()
                     .putLong("czas_startu_ms", poczatekDzisiajMs)
                     .putInt("zapisane_sekundy", sekundy)
-                    .putString("czas_startu_tekst", pobierzAktualnaDateICzas())
+                    .putString("czas_startu_tekst", czasStartuTekst)
                     .apply()
             } else {
                 sekundy++
@@ -291,13 +306,11 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                         )
                         zapiszSesjeWHistorii(sharedPreferences, nowaSesja)
 
-                        sekundyDzisZapisane += sekundy
                         czyPracuje = false
                         sekundy = 0
                         czasStartuTekst = ""
 
                         sharedPreferences.edit()
-                            .putInt("suma_sekund_$dataDzis", sekundyDzisZapisane)
                             .putBoolean("stan_czy_pracuje", false)
                             .putInt("zapisane_sekundy", 0)
                             .putLong("czas_startu_ms", 0L)
@@ -782,18 +795,8 @@ fun filtrujSesjeZaOkres(
     )
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+fun obliczSekundyDlaDnia (sesje: List<SesjaPracy>, dataFormatDdMm: String): Int {
+    return sesje.filter { sesja ->
+        sesja.dataCzasStartu.startsWith(dataFormatDdMm)
+    }.sumOf { it.przepracowaneSekundy }
+}
