@@ -45,8 +45,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.semantics
 
 
 class MainActivity : ComponentActivity() {
@@ -560,17 +562,201 @@ fun EkranRaportow (
     sharedPreferences: SharedPreferences,
     onPowrot: () -> Unit
 ) {
+    val sesje = remember { wczytajHistorieSesji(sharedPreferences) }
+
+    val raportDzisiaj = remember { filtrujSesjeZaOkres(sesje, 1, sharedPreferences) }
+    val raportTydzien = remember { filtrujSesjeZaOkres(sesje, 7, sharedPreferences) }
+    val raportMiesiac = remember { filtrujSesjeZaOkres(sesje, 30, sharedPreferences) }
+
+    val listaRaportow = listOf(raportDzisiaj, raportTydzien, raportMiesiac)
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
+            .padding(top = 48.dp,bottom = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(text = "Raporty okresowe", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(listaRaportow.size) { indeks ->
+                val raport = listaRaportow[indeks]
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = raport.etykieta,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = String.format(Locale.getDefault(), "%.2f zł", raport.laczyZarobek),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Baza (${String.format(Locale.getDefault(), "%.0f", raport.stawkaStandard)} zł/h): ${formatujGodzinyKrotko(raport.sekundyStandard)}",
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = String.format(Locale.getDefault(), "%.2f zł", raport.zarobekStandard),
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "• Nadgodziny (${String.format(Locale.getDefault(), "%.0f", raport.stawkaNadgodziny)} zł/h): ${formatujGodzinyKrotko(raport.sekundyNadgodziny)}",
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                text = String.format(Locale.getDefault(), "%.2f zł", raport.zarobekNadgodziny),
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         Button(onClick = onPowrot) {
             Text(text = "Wróć")
         }
     }
 }
+
+data class PodsumowanieOkresu (
+    val etykieta: String,
+    val laczneSekundy: Int,
+    val laczyZarobek: Double,
+    val sekundyStandard: Int,
+    val zarobekStandard: Double,
+    val sekundyNadgodziny: Int,
+    val zarobekNadgodziny: Double,
+    val stawkaStandard: Double,
+    val stawkaNadgodziny: Double
+)
+
+fun filtrujSesjeZaOkres(
+    sesje: List<SesjaPracy>,
+    dniWstecz: Int,
+    sharedPreferences: SharedPreferences
+): PodsumowanieOkresu {
+    val teraz = Calendar.getInstance()
+    teraz.add(Calendar.DAY_OF_YEAR, - dniWstecz)
+    val granicznaData = teraz.time
+
+    val formatDaty = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+
+    val stawkaStd = sharedPreferences.getString("stawka_standardowa", "30.0")?.toDoubleOrNull() ?: 30.0
+    val stawkaNad = sharedPreferences.getString("stawka_nadgodziny", "45.0")?.toDoubleOrNull() ?: 45.0
+
+    val przefiltrowane = sesje.filter { sesja ->
+        try {
+            val dataStartu = formatDaty.parse(sesja.dataCzasStartu)
+            dataStartu != null && dataStartu.after(granicznaData)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    var sumaSekundStd = 0
+    var sumaZarobkuStd = 0.0
+    var sumaSekundNad = 0
+    var sumaZarobkuNad = 0.0
+
+    for (sesja in przefiltrowane) {
+        val sekundy = sesja.przepracowaneSekundy
+        val pelneKwadranse = sekundy / 900
+
+        val cal = Calendar.getInstance()
+        var czyWeekendSesji = false
+        try {
+            val dataStartu = formatDaty.parse(sesja.dataCzasStartu)
+            if (dataStartu != null) {
+                cal.time = dataStartu
+                val day = cal.get(Calendar.DAY_OF_WEEK)
+                czyWeekendSesji = (day == Calendar.SATURDAY || day == Calendar.SUNDAY)
+            }
+        } catch (_: Exception) {}
+
+        if (czyWeekendSesji) {
+            sumaSekundNad += sekundy
+            sumaZarobkuNad += pelneKwadranse * (stawkaNad / 4.0)
+        } else {
+            if (pelneKwadranse <= 32){
+                sumaSekundStd += sekundy
+                sumaZarobkuStd += pelneKwadranse * (stawkaStd / 4.0)
+            } else {
+                val sekundyBaza = 32 * 900
+                val sekundyNad = sekundy - sekundyBaza
+                val kwadranseNad = pelneKwadranse - 32
+
+                sumaSekundStd += sekundyBaza
+                sumaZarobkuStd += 32 * (stawkaStd / 4.0)
+
+                sumaSekundNad += sekundyNad
+                sumaZarobkuNad += kwadranseNad * (stawkaNad / 4.0)
+            }
+        }
+    }
+
+    val nazwa = when (dniWstecz) {
+        1 -> "Dzisiaj"
+        7 -> "Bieżący tydzień"
+        else -> "Bieżący miesiąc"
+    }
+
+    return PodsumowanieOkresu(
+        etykieta = nazwa,
+        laczneSekundy = sumaSekundStd + sumaSekundNad,
+        laczyZarobek = sumaZarobkuStd + sumaZarobkuNad,
+        sekundyStandard = sumaSekundStd,
+        zarobekStandard = sumaZarobkuStd,
+        sekundyNadgodziny = sumaSekundNad,
+        zarobekNadgodziny = sumaZarobkuNad,
+        stawkaStandard = stawkaStd,
+        stawkaNadgodziny = stawkaNad
+    )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
