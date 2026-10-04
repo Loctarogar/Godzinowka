@@ -2,7 +2,6 @@ package com.example.godzinowka
 
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.widget.Space
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,12 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +27,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,18 +37,12 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.semantics.semantics
-import com.example.godzinowka.data.usunSesjeZHistorii
 import com.example.godzinowka.data.wczytajHistorieSesji
 import com.example.godzinowka.data.zapiszSesjeWHistorii
-import com.example.godzinowka.model.PodsumowanieOkresu
-
+import com.example.godzinowka.ui.theme.EkranHistorii
+import com.example.godzinowka.ui.theme.EkranOpcji
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -237,7 +227,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             modifier = modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
-
         ) {
             Text(
                 text = name, fontSize = 20.sp
@@ -352,134 +341,6 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
 fun GreetingPreview() {
     GodzinowkaTheme {
         Greeting("Android")
-    }
-}
-
-@Composable
-fun EkranOpcji(
-    stawkaStandardowa: String,
-    onStawkaStandardowaChange: (String) -> Unit,
-    stawkaNadgodziny: String,
-    onStawkaNadgodzinyChange: (String) -> Unit,
-    onPowrot: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(text = "Ustawienia stawek", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = stawkaStandardowa,
-            onValueChange = onStawkaStandardowaChange,
-            label = { Text("Stawka bazowa (zł/h)") }
-        )
-
-        Spacer(modifier = Modifier.height( 8.dp ))
-
-        OutlinedTextField(
-            value = stawkaNadgodziny,
-            onValueChange = onStawkaNadgodzinyChange,
-            label = { Text("Stawka nadgodziny/weekend (zł/h)")}
-        )
-
-        Spacer(modifier =  Modifier.height(24.dp))
-
-        Button(onClick = onPowrot) {
-            Text(text = "Wróć")
-        }
-    }
-}
-
-
-
-@Composable
-fun EkranHistorii(
-    sharedPreferences: SharedPreferences,
-    onPowrot: () -> Unit
-) {
-    val listaSesji = remember {
-        androidx.compose.runtime.mutableStateListOf<SesjaPracy>().apply {
-        addAll(wczytajHistorieSesji(sharedPreferences))
-        }
-    }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Historia sesji",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (listaSesji.isEmpty()){
-            Spacer(modifier = Modifier.height(32.dp))
-            Text(text = "Brak zapisanych sesji")
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(listaSesji.size) {indeks ->
-                    val sesja = listaSesji[indeks]
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = "Start: ${sesja.dataCzasStartu}",
-                                fontSize = 14.sp
-                            )
-                            Text(
-                                text = "Stop: ${sesja.dataCzasStopu}",
-                                fontSize = 14.sp
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column {
-                                    Text(
-                                        text = "Czas: ${formatujGodzinyKrotko(sesja.przepracowaneSekundy)}",
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                    Text(
-                                        text = String.format(Locale.getDefault(), "%.2f zł", sesja.zarobekKwota),
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Button(
-                                    onClick = {
-                                        usunSesjeZHistorii(sharedPreferences, indeks)
-                                        listaSesji.removeAt(indeks)
-                                    }
-                                ) {
-                                    Text(text = "Usuń")
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = onPowrot) {
-            Text(text = "Wróć")
-        }
     }
 }
 
