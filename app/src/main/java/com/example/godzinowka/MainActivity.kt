@@ -48,6 +48,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.semantics
+import com.example.godzinowka.data.usunSesjeZHistorii
+import com.example.godzinowka.data.wczytajHistorieSesji
+import com.example.godzinowka.data.zapiszSesjeWHistorii
 import com.example.godzinowka.model.PodsumowanieOkresu
 
 
@@ -390,34 +393,7 @@ fun EkranOpcji(
     }
 }
 
-fun zapiszSesjeWHistorii(
-    sharedPreferences: android.content.SharedPreferences,
-    nowaSesja: SesjaPracy
-) {
-    val gson = Gson()
-    val dotychczasoweSesje = wczytajHistorieSesji(sharedPreferences).toMutableList()
 
-    dotychczasoweSesje.add(0, nowaSesja)
-
-    val jsonTekst = gson.toJson(dotychczasoweSesje)
-    sharedPreferences.edit()
-        .putString("historia_sesji_json", jsonTekst)
-        .apply()
-}
-
-fun wczytajHistorieSesji(
-    sharedPreferences: android.content.SharedPreferences
-): List<SesjaPracy> {
-    val gson = Gson()
-    val jsonTekst = sharedPreferences.getString("historia_sesji_json", null) ?: return emptyList()
-
-    val typListy = object : TypeToken<List<SesjaPracy>>() {}.type
-    return  try {
-        gson.fromJson(jsonTekst, typListy)
-    } catch (e: Exception) {
-        emptyList()
-    }
-}
 
 @Composable
 fun EkranHistorii(
@@ -504,20 +480,6 @@ fun EkranHistorii(
         Button(onClick = onPowrot) {
             Text(text = "Wróć")
         }
-    }
-}
-
-fun usunSesjeZHistorii (
-    sharedPreferences: SharedPreferences,
-    indeksDoUsuniecia: Int
-) {
-    val dotychczasoweSesje = wczytajHistorieSesji(sharedPreferences).toMutableList()
-    if (indeksDoUsuniecia in dotychczasoweSesje.indices) {
-        dotychczasoweSesje.removeAt(indeksDoUsuniecia)
-            val jsonTekst = Gson().toJson(dotychczasoweSesje)
-            sharedPreferences.edit()
-                .putString("historia_sesji_json", jsonTekst)
-                .apply()
     }
 }
 
