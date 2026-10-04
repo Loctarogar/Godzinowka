@@ -699,14 +699,21 @@ fun filtrujSesjeZaOkres(
     val granicznaData = calGranica.time
 
     val formatDaty = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+    val formatDnia = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
+    val dzisiajTekst = formatDnia.format(teraz.time)
 
     val stawkaStd = sharedPreferences.getString("stawka_standardowa", "30.0")?.toDoubleOrNull() ?: 30.0
     val stawkaNad = sharedPreferences.getString("stawka_nadgodziny", "45.0")?.toDoubleOrNull() ?: 45.0
 
     val przefiltrowane = sesje.filter { sesja ->
         try {
-            val dataStartu = formatDaty.parse(sesja.dataCzasStartu)
-            dataStartu != null && dataStartu.after(granicznaData)
+            if (dniWstecz == 1){
+                sesja.dataCzasStartu.startsWith(dzisiajTekst.substring(0, 5)) ||
+                        sesja.dataCzasStopu.startsWith(dzisiajTekst.substring(0, 5))
+            } else {
+                val dataStartu = formatDaty.parse(sesja.dataCzasStartu)
+                dataStartu != null && dataStartu.after(granicznaData)
+            }
         } catch (e: Exception) {
             false
         }
