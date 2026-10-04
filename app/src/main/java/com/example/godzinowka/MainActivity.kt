@@ -48,6 +48,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Card
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.semantics
+import com.example.godzinowka.model.PodsumowanieOkresu
 
 
 class MainActivity : ComponentActivity() {
@@ -675,18 +676,6 @@ fun EkranRaportow (
         }
     }
 }
-
-data class PodsumowanieOkresu (
-    val etykieta: String,
-    val laczneSekundy: Int,
-    val laczyZarobek: Double,
-    val sekundyStandard: Int,
-    val zarobekStandard: Double,
-    val sekundyNadgodziny: Int,
-    val zarobekNadgodziny: Double,
-    val stawkaStandard: Double,
-    val stawkaNadgodziny: Double
-)
 
 fun filtrujSesjeZaOkres(
     sesje: List<SesjaPracy>,
